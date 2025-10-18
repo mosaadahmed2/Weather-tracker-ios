@@ -1,0 +1,25 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build unsigned IPA and upload to Firebase"
+  lane :firebase_beta do
+    setup_ci
+
+    # Build the unsigned IPA
+    build_app(
+      scheme: "WeatherHistory",
+      export_method: "development",   # no signing
+      output_directory: "build",
+      output_name: "WeatherHistory.ipa"
+    )
+
+    # Upload to Firebase
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_IOS"],
+      testers: "youremail@gmail.com",
+      release_notes: "CI build from GitHub Actions",
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      ipa_path: "build/WeatherHistory.ipa"
+    )
+  end
+end
