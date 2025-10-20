@@ -1,58 +1,32 @@
-name: iOS Build & Deploy to Firebase
+name: iOS CI/CD to Firebase
 
 on:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: macos-latest
-    environment: development    
+    environment: development
 
     steps:
-      # ✅ Step 1: Checkout your repository
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      # ✅ Step 2: Set up Ruby and install Fastlane
-      - name: Set up Ruby and Fastlane
+      - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.2
-      - name: Install Fastlane
-        run: |
-          gem install fastlane --no-document
-          which fastlane
-          fastlane --version
 
-      # ✅ Step 3: Install CocoaPods (if needed)
-      - name: Install CocoaPods
+      - name: Install dependencies
         run: |
-          brew install cocoapods || true
-          pod install || true
+          gem install bundler
+          bundle install
+          bundle exec fastlane add_plugin firebase_app_distribution
 
-      # ✅ Step 4: Build your app
-      - name: Build iOS app
-        run: |
-          xcodebuild -scheme WeatherHistory \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15' \
-            clean build
-
-      # ✅ Step 5: (Optional) Run Tests
-      - name: Run tests
-        run: |
-          xcodebuild test -scheme WeatherHistory \
-            -sdk iphonesimulator \
-            -destination 'platform=iOS Simulator,name=iPhone 15'
-
-      # ✅ Step 6: Deploy using Fastlane (only if Firebase configured)
-      - name: Deploy to Firebase App Distribution
-        if: ${{ secrets.FIREBASE_TOKEN != '' }}
+      - name: Build and upload to Firebase
+        run: bundle exec fastlane firebase_beta
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           FIREBASE_APP_ID_IOS: ${{ secrets.FIREBASE_APP_ID_IOS }}
-        run: |
-          fastlane firebase_beta
