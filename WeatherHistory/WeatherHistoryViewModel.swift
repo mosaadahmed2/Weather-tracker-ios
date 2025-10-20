@@ -19,6 +19,7 @@ final class WeatherHistoryViewModel: ObservableObject {
     @Published var history: [HistoryRecord] = []
     @Published var errorMessage: String?
     @Published var isLoading: Bool = false
+    @Published var lastUpdateTime = Date()
 
     // Analytics
     @Published var avgTemp: Double = 0
@@ -45,10 +46,21 @@ final class WeatherHistoryViewModel: ObservableObject {
     func fetchAndSave() async {
         let name = cityInput.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
-        isLoading = true; errorMessage = nil
+        
+        print("🔍 fetchAndSave called for city: \(name)")
+        
+        isLoading = true
+        errorMessage = nil
+        
         do {
             let weather = try await weatherService.fetchWeather(for: name)
             self.currentWeather = weather
+            self.lastUpdateTime = Date()
+            // 🐛 DEBUG: Check night calculation right after fetching
+            print("✅ Got weather for: \(weather.name)")
+            let nightValue = isNight(for: weather)
+            print("🌙 Calculated isNight: \(nightValue)")
+            
             // Save to Firestore
             let rec = HistoryRecord(
                 city: weather.name,
@@ -56,9 +68,12 @@ final class WeatherHistoryViewModel: ObservableObject {
                 condition: weather.weather.first?.description ?? ""
             )
             try await repo.add(rec)
+            
         } catch {
             errorMessage = error.localizedDescription
+            print("❌ Error fetching weather: \(error.localizedDescription)")
         }
+        
         isLoading = false
     }
 
@@ -85,10 +100,36 @@ final class WeatherHistoryViewModel: ObservableObject {
             }
     }
     func isNight(for weather: WeatherResponse) -> Bool {
-        let cityTime = Date(timeIntervalSince1970: TimeInterval(weather.dt))
-        let sunrise  = Date(timeIntervalSince1970: TimeInterval(weather.sys.sunrise))
-        let sunset   = Date(timeIntervalSince1970: TimeInterval(weather.sys.sunset))
-        return cityTime < sunrise || cityTime > sunset
+        // Get current UTC time as Unix timestamp
+        let currentTime = Date().timeIntervalSince1970
+        
+        // Sunrise and sunset are already Unix timestamps in UTC from the API
+        let sunriseTime = TimeInterval(weather.sys.sunrise)
+        let sunsetTime = TimeInterval(weather.sys.sunset)
+        
+        // 🐛 DEBUG: Print all the values
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        print("🏙 City: \(weather.name)")
+        print("🕐 Current Unix Time: \(currentTime)")
+        print("🌅 Sunrise Unix Time: \(sunriseTime)")
+        print("🌇 Sunset Unix Time: \(sunsetTime)")
+        
+        // Convert to readable times for debugging
+        let df = DateFormatter()
+        df.timeStyle = .medium
+        df.timeZone = TimeZone(secondsFromGMT: weather.timezone)
+        
+        print("🕐 Current Local Time: \(df.string(from: Date()))")
+        print("🌅 Sunrise Local Time: \(df.string(from: Date(timeIntervalSince1970: sunriseTime)))")
+        print("🌇 Sunset Local Time: \(df.string(from: Date(timeIntervalSince1970: sunsetTime)))")
+        
+        let isNight = currentTime < sunriseTime || currentTime > sunsetTime
+        print("🌙 Is Night? \(isNight)")
+        print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+        
+        return isNight
     }
+
+
 
 }

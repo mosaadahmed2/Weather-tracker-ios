@@ -9,7 +9,7 @@
 // WeatherModel.swift
 import Foundation
 
-struct WeatherResponse: Codable {
+struct WeatherResponse: Codable, Equatable {
     let name: String
     let main: Main
     let weather: [Weather]
@@ -19,24 +19,24 @@ struct WeatherResponse: Codable {
     let dt: Int           // current time (UTC seconds)
 }
 
-struct Main: Codable {
+struct Main: Codable, Equatable {
     let temp: Double
     let feels_like: Double
     let humidity: Int
 }
 
-struct Weather: Codable {
+struct Weather: Codable, Equatable {
     let description: String
     let icon: String
 }
 
-struct Sys: Codable {
+struct Sys: Codable, Equatable {
     let sunrise: Int
     let sunset: Int
     let country: String
 }
 
-struct Wind: Codable {
+struct Wind: Codable, Equatable {
     let speed: Double
 }
 
