@@ -9,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: macos-latest
+    environment: development    
 
     steps:
       # ✅ Step 1: Checkout your repository
