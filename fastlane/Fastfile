@@ -5,9 +5,16 @@ platform :ios do
   lane :firebase_beta do
     # 1️⃣ Clean and build the app
     build_app(
-      scheme: "WeatherHistory",
-      export_method: "development"
-    )
+  scheme: "WeatherHistory",
+  export_method: "ad-hoc",        # ✅ use ad-hoc
+  export_options: {
+    signingStyle: "automatic"
+  },
+  skip_codesigning: true,         # ✅ skip signing
+  output_directory: "build",
+  output_name: "WeatherHistory.ipa"
+)
+
 
     # 2️⃣ Upload the .ipa to Firebase App Distribution
     firebase_app_distribution(
