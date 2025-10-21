@@ -1,0 +1,19 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and upload to Firebase App Distribution"
+  lane :firebase_beta do
+    # 1️⃣ Clean and build the app
+    build_app(
+      scheme: "WeatherHistory",
+      export_method: "development"
+    )
+
+    # 2️⃣ Upload the .ipa to Firebase App Distribution
+    firebase_app_distribution(
+      app: ENV["FIREBASE_APP_ID_IOS"],
+      firebase_cli_token: ENV["FIREBASE_TOKEN"],
+      release_notes: "Automated build from GitHub Actions 🚀"
+    )
+  end
+end
